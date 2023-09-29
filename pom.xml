@@ -8,17 +8,6 @@
     <artifactId>MinecraftProxy</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <repositories>
-        <repository>
-            <id>netty-all</id>
-            <url>https://mvnrepository.com/artifact/io.netty/netty-all</url>
-        </repository>
-        <repository>
-            <id>gson</id>
-            <url>https://mvnrepository.com/artifact/com.google.code.gson/gson</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>io.netty</groupId>
@@ -29,11 +18,6 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
-        </dependency>
-        <dependency>
-            <groupId>top.speedcubing</groupId>
-            <artifactId>speedcubingLib</artifactId>
-            <version>1.0.0</version>
         </dependency>
 
     </dependencies>

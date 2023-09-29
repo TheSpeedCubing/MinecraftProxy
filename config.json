@@ -11,5 +11,24 @@
       "proxy-protocol": "v2",
       "state": true
     }
-  ]
+  ],
+  "offline-ping": {
+    "version": {
+      "name": "§4offline",
+      "protocol": 0
+    },
+    "players": {
+      "max": 0,
+      "online": 0,
+      "sample": [
+        {
+          "name": "§4backend server is offline.",
+          "id": "00000000-0000-0000-0000-000000000000"
+        }
+      ]
+    },
+    "description": "proxy",
+    "favicon": "data:image/png;base64,<data>"
+  },
+  "offline-kick": "1"
 }

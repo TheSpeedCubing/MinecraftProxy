@@ -5,20 +5,22 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import top.speedcubing.lib.eventbus.CubingEventManager;
-import top.speedcubing.lib.utils.TimeFormatter;
 import top.speedcubing.minecraftproxy.obj.Node;
 
 import java.io.FileReader;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Main {
     public static boolean serverpingLog = true;
     public static boolean connectingLog = true;
+    public static String offlinePing;
+    public static String offlineKick;
     public static List<Node> nodeSet = new ArrayList<>();
 
     public static void print(String s) {
-        System.out.println("[" + TimeFormatter.formatNow("HH:mm:ss") + "] [MinecraftProxy] " + s);
+        System.out.println("[" + DateTimeFormatter.ofPattern("HH:mm:ss").format(LocalDateTime.now()) + "] [MinecraftProxy] " + s);
     }
 
     public static void main(String[] args) {
@@ -34,7 +36,6 @@ public class Main {
         }).start();
         print("loading...");
         reload();
-        CubingEventManager.registerListeners(new EventListener());
     }
 
     public static void reload() {
@@ -44,6 +45,8 @@ public class Main {
             JsonObject object = JsonParser.parseReader(new FileReader("config.json")).getAsJsonObject();
             serverpingLog = object.getAsJsonObject("log").get("serverping").getAsBoolean();
             connectingLog = object.getAsJsonObject("log").get("connection").getAsBoolean();
+            offlinePing = object.get("offline-ping").getAsJsonObject().toString();
+            offlineKick = object.get("offline-kick").getAsString();
             JsonArray nodes = object.get("nodes").getAsJsonArray();
             for (JsonElement j : nodes) {
                 JsonObject o = j.getAsJsonObject();
