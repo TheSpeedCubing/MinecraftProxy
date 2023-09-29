@@ -1,0 +1,15 @@
+{
+  "log": {
+    "serverping": true,
+    "connection": true
+  },
+  "nodes": [
+    {
+      "name": "example node",
+      "localPort": 25565,
+      "remoteAddress": "example.com:25565",
+      "proxy-protocol": "v2",
+      "state": true
+    }
+  ]
+}
