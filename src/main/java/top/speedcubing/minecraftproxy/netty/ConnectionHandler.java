@@ -28,8 +28,8 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        InetSocketAddress playerAddress = (InetSocketAddress) ctx.channel().remoteAddress();
         if (handshake) {
+            InetSocketAddress playerAddress = (InetSocketAddress) ctx.channel().remoteAddress();
             for (CIDR cidr : node.blockedCIDR) {
                 if (cidr.contains(playerAddress.getAddress().getHostAddress())) {
                     close();
