@@ -7,9 +7,10 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.haproxy.*;
 import io.netty.util.ReferenceCountUtil;
+import top.speedcubing.lib.utils.bytes.ByteBufUtils;
 import top.speedcubing.lib.utils.internet.ip.CIDR;
 
-import java.net.*;
+import java.net.InetSocketAddress;
 
 public class ConnectionHandler extends ChannelInboundHandlerAdapter {
 
@@ -38,12 +39,12 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
                 }
             }
             ByteBuf buf = (ByteBuf) msg;
-            final int packetLength = Utils.readVarInt(buf);
-            final int packetID = Utils.readVarInt(buf);
-            final int clientVersion = Utils.readVarInt(buf);
-            final String hostname = Utils.readString(buf);
+            final int packetLength = ByteBufUtils.readVarInt(buf);
+            final int packetID = ByteBufUtils.readVarInt(buf);
+            final int clientVersion = ByteBufUtils.readVarInt(buf);
+            final String hostname = ByteBufUtils.readString(buf);
             final int port = buf.readUnsignedShort();
-            final int state = Utils.readVarInt(buf);
+            final int state = ByteBufUtils.readVarInt(buf);
             forwardToServer(ctx, buf, packetLength, packetID, clientVersion, hostname, port, state, playerAddress);
         } else {
             if (serverChannel != null)
@@ -107,12 +108,12 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
                         }
                         //forward data to server
                         ByteBuf sendBuf = Unpooled.buffer();
-                        Utils.writeVarInt(sendBuf, packetLength);
-                        Utils.writeVarInt(sendBuf, packetID);
-                        Utils.writeVarInt(sendBuf, clientVersion);
-                        Utils.writeString(sendBuf, hostname);
-                        Utils.writeVarShort(sendBuf, port);
-                        Utils.writeVarInt(sendBuf, state);
+                        ByteBufUtils.writeVarInt(sendBuf, packetLength);
+                        ByteBufUtils.writeVarInt(sendBuf, packetID);
+                        ByteBufUtils.writeVarInt(sendBuf, clientVersion);
+                        ByteBufUtils.writeString(sendBuf, hostname);
+                        ByteBufUtils.writeVarShort(sendBuf, port);
+                        ByteBufUtils.writeVarInt(sendBuf, state);
                         while (buf.readableBytes() > 0)
                             sendBuf.writeByte(buf.readByte());
                         serverChannel.writeAndFlush(sendBuf);

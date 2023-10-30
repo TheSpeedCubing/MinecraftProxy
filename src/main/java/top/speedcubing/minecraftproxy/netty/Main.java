@@ -73,8 +73,11 @@ public class Main {
                     nodeSet.add(n);
                 }
             }
-            for (Node n : copiedNodes)
+            for (Node n : copiedNodes) {
+                n.bossGroup.shutdownGracefully();
+                n.workerGroup.shutdownGracefully();
                 n.future.channel().close();
+            }
         } catch (Exception e) {
             print("config.json error");
             nodeSet.clear();
@@ -102,6 +105,7 @@ public class Main {
             } catch (Exception e) {
                 n.bossGroup.shutdownGracefully();
                 n.workerGroup.shutdownGracefully();
+                n.future.channel().close();
                 e.printStackTrace();
             }
         }
