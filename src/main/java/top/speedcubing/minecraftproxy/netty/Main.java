@@ -96,7 +96,7 @@ public class Main {
                         .childHandler(new ChannelInitializer<SocketChannel>() {
                             @Override
                             public void initChannel(SocketChannel ch) {
-                                ch.pipeline().addLast(new ConnectionHandler(n, System.currentTimeMillis()));
+                                ch.pipeline().addLast(new ConnectionHandler(n));
                             }
                         })
                         .option(ChannelOption.SO_BACKLOG, 128)

@@ -18,13 +18,11 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
     private final Node node;
     private EventLoopGroup eventLoop;
     private Channel serverChannel;
-    private final long create;
     public boolean handshake = true;
 
-    public ConnectionHandler(Node node, long create) {
+    public ConnectionHandler(Node node) {
         this.node = node;
         this.server = node.servers.get(Main.random.nextInt(node.servers.size()));
-        this.create = create;
     }
 
     @Override
@@ -70,6 +68,7 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
     void forwardToServer(ChannelHandlerContext ctx, ByteBuf buf, int packetLength, int packetID, int clientVersion, String hostname, int port, int state, InetSocketAddress playerAddress) {
         eventLoop = new NioEventLoopGroup();
         handshake = false;
+        long start = System.currentTimeMillis();
         new Bootstrap()
                 .group(eventLoop)
                 .channel(NioSocketChannel.class)
@@ -99,7 +98,7 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
                         close();
                         ctx.close();
                     } else {
-                        long ping = System.currentTimeMillis() - create;
+                        long ping = System.currentTimeMillis() - start;
                         if (server.HAProxy != null) {
                             serverChannel.pipeline().addFirst(HAProxyMessageEncoder.INSTANCE);
                             HAProxyMessage haProxyMessage = new HAProxyMessage(server.HAProxy, HAProxyCommand.PROXY, HAProxyProxiedProtocol.TCP4, playerAddress.getAddress().getHostAddress(), serverAddress.getAddress().getHostAddress(), playerAddress.getPort(), serverAddress.getPort());
