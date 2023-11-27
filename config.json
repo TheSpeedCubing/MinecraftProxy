@@ -18,7 +18,9 @@
          }
       ],
       "state": true,
-      "blockedCIDR": []
+      "blockedCIDR": [],
+      "noConnection": false,
+      "kick": "kickMessage"
     }
   ]
 }

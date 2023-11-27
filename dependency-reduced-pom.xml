@@ -28,7 +28,7 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <classpathPrefix>lib/</classpathPrefix>
-              <mainClass>top.speedcubing.minecraftproxy.Main</mainClass>
+              <mainClass>top.speedcubing.minecraftproxy.netty.Main</mainClass>
             </manifest>
           </archive>
         </configuration>

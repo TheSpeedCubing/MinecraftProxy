@@ -68,7 +68,10 @@ public class Main {
                             o.get("name").getAsString(),
                             o.get("localport").getAsInt(),
                             backends,
-                            blockedCIDR
+                            blockedCIDR,
+                            o.get("noConnection").getAsBoolean(),
+                            o.has("kick"),
+                            o.has("kick") ? o.get("kick").getAsString() : null
                     );
                     nodeSet.add(n);
                 }

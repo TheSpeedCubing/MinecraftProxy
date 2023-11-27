@@ -43,8 +43,18 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
             final String hostname = ByteBufUtils.readString(buf);
             final int port = buf.readUnsignedShort();
             final int state = ByteBufUtils.readVarInt(buf);
+            if (state != 1) {
+                if (node.kickOverride) {
+                    send(ctx, "\"" + node.kick + "\"");
+                    return;
+                }
+            }
             forwardToServer(ctx, buf, packetLength, packetID, clientVersion, hostname, port, state, playerAddress);
         } else {
+            if (node.noConnection) {
+                ctx.channel().close();
+                return;
+            }
             if (serverChannel != null)
                 serverChannel.writeAndFlush(msg);
             else
@@ -135,14 +145,14 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
             serverChannel.close();
     }
 
-//    private void send(ChannelHandlerContext ctx, String data) {
-//        ByteBuf buf = Unpooled.buffer();
-//        Utils.writeVarInt(buf, 0);
-//        Utils.writeString(buf, data);
-//        ByteBuf header = Unpooled.buffer();
-//        Utils.writeVarInt(header, buf.readableBytes());
-//        ctx.channel().writeAndFlush(header);
-//        ctx.channel().writeAndFlush(buf);
-//        ctx.close();
-//    }
+    private void send(ChannelHandlerContext ctx, String data) {
+        ByteBuf buf = Unpooled.buffer();
+        ByteBufUtils.writeVarInt(buf, 0);
+        ByteBufUtils.writeString(buf, data);
+        ByteBuf header = Unpooled.buffer();
+        ByteBufUtils.writeVarInt(header, buf.readableBytes());
+        ctx.channel().writeAndFlush(header);
+        ctx.channel().writeAndFlush(buf);
+        ctx.close();
+    }
 }

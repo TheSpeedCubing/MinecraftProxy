@@ -9,10 +9,11 @@
     <version>1.0-SNAPSHOT</version>
 
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>4.1.90.Final</version>
+            <version>4.1.100.Final</version>
         </dependency>
         <dependency>
             <groupId>top.speedcubing</groupId>
@@ -57,7 +58,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>top.speedcubing.minecraftproxy.Main</mainClass>
+                            <mainClass>top.speedcubing.minecraftproxy.netty.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
