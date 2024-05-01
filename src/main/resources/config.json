@@ -1,0 +1,30 @@
+{
+  "log": {
+    "serverping": true,
+    "connection": true
+  },
+  "nodes": [
+    {
+      "name": "example node",
+      "localport": 20000,
+      "servers": [
+        {
+          "address": "example.com:30000",
+          "proxy-protocol": "v2"
+        },
+        {
+          "address": "example.com:30001",
+          "proxy-protocol": "v1"
+        },
+        {
+          "address": "example.com:30002",
+          "proxy-protocol": "off"
+        }
+      ],
+      "state": true,
+      "blockedCIDR": [],
+      "noConnection": false,
+      "kick": "kickMessage"
+    }
+  ]
+}

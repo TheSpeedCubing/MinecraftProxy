@@ -1,56 +1,80 @@
-package top.speedcubing.minecraftproxy.netty;
+package top.speedcubing.minecraftproxy.netty.handler;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.*;
-import io.netty.channel.*;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.haproxy.*;
+import io.netty.handler.codec.haproxy.HAProxyCommand;
+import io.netty.handler.codec.haproxy.HAProxyMessage;
+import io.netty.handler.codec.haproxy.HAProxyMessageEncoder;
+import io.netty.handler.codec.haproxy.HAProxyProxiedProtocol;
 import io.netty.util.ReferenceCountUtil;
-import top.speedcubing.lib.utils.bytes.ByteBufUtils;
-import top.speedcubing.lib.utils.internet.ip.CIDR;
-
 import java.net.InetSocketAddress;
+import java.util.Random;
+import top.speedcubing.lib.utils.bytes.ByteBufUtils;
+import top.speedcubing.minecraftproxy.netty.BackendServer;
+import top.speedcubing.minecraftproxy.netty.Main;
+import top.speedcubing.minecraftproxy.netty.Node;
+import top.speedcubing.minecraftproxy.netty.config;
+import top.speedcubing.minecraftproxy.netty.hand.Handshake;
+import top.speedcubing.minecraftproxy.netty.hand.SLP;
 
 public class ConnectionHandler extends ChannelInboundHandlerAdapter {
 
     private final BackendServer server;
     private final Node node;
-    private EventLoopGroup eventLoop;
+    private EventLoopGroup eventLoop = null;
     private Channel serverChannel;
-    public boolean handshake = true;
+    public int handshakeProgress = 1;
+    private SLP slp;
 
     public ConnectionHandler(Node node) {
+        Random r = new Random();
         this.node = node;
-        this.server = node.servers.get(Main.random.nextInt(node.servers.size()));
+        this.server = node.servers.get(r.nextInt(node.servers.size()));
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        if (handshake) {
-            InetSocketAddress playerAddress = (InetSocketAddress) ctx.channel().remoteAddress();
-            for (CIDR cidr : node.blockedCIDR) {
-                if (cidr.contains(playerAddress.getAddress().getHostAddress())) {
-                    close();
-                    ctx.close();
-                    return;
-                }
-            }
-            ByteBuf buf = (ByteBuf) msg;
+        InetSocketAddress playerAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+
+        ByteBuf buf = (ByteBuf) msg;
+        if (handshakeProgress == 1) {
             final int packetLength = ByteBufUtils.readVarInt(buf);
             final int packetID = ByteBufUtils.readVarInt(buf);
-            final int clientVersion = ByteBufUtils.readVarInt(buf);
-            final String hostname = ByteBufUtils.readString(buf);
-            final int port = buf.readUnsignedShort();
-            final int state = ByteBufUtils.readVarInt(buf);
-            if (state != 1) {
-                if (node.kickOverride) {
-                    send(ctx, "\"" + node.kick + "\"");
+
+            final int protocolVersion = ByteBufUtils.readVarInt(buf);
+            final String serverAddress = ByteBufUtils.readString(buf);
+            final int serverPort = buf.readUnsignedShort();
+            final int nextState = ByteBufUtils.readVarInt(buf);
+
+            if (nextState != 1) {
+                if (node.kick) {
+                    send(ctx, "\"" + node.kickMessage + "\"");
                     return;
                 }
             }
-            forwardToServer(ctx, buf, packetLength, packetID, clientVersion, hostname, port, state, playerAddress);
-        } else {
+            Handshake handshake = new Handshake(protocolVersion, serverAddress, serverPort, nextState);
+            slp = new SLP(packetLength, packetID, handshake);
+            handshakeProgress = 2;
+        }
+        if (handshakeProgress == 2) {
+            if (buf.readableBytes() > 0) {
+                final int statusRequest = ByteBufUtils.readVarInt(buf);
+                final int pingRequest = ByteBufUtils.readVarInt(buf);
+                forwardToServer(ctx, buf, playerAddress, statusRequest, pingRequest);
+                handshakeProgress = 3;
+            }
+        } else if (handshakeProgress == 3) {
             if (node.noConnection) {
                 ctx.channel().close();
                 return;
@@ -70,14 +94,15 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        Main.print("(1) " + cause);
+        Main.print("(1) ");
+        cause.printStackTrace();
         close();
         ctx.close();
     }
 
-    void forwardToServer(ChannelHandlerContext ctx, ByteBuf buf, int packetLength, int packetID, int clientVersion, String hostname, int port, int state, InetSocketAddress playerAddress) {
+    void forwardToServer(ChannelHandlerContext ctx, ByteBuf buf, InetSocketAddress playerAddress, int statusRequest, int pingRequest) {
         eventLoop = new NioEventLoopGroup();
-        handshake = false;
+
         long start = System.currentTimeMillis();
         new Bootstrap()
                 .group(eventLoop)
@@ -97,6 +122,8 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
 
                     @Override
                     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+                        Main.print("(2) ");
+                        cause.printStackTrace();
                         close();
                         ctx.close();
                         buf.release();
@@ -113,24 +140,27 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
                             serverChannel.pipeline().addFirst(HAProxyMessageEncoder.INSTANCE);
                             HAProxyMessage haProxyMessage = new HAProxyMessage(server.HAProxy, HAProxyCommand.PROXY, HAProxyProxiedProtocol.TCP4, playerAddress.getAddress().getHostAddress(), serverAddress.getAddress().getHostAddress(), playerAddress.getPort(), serverAddress.getPort());
                             serverChannel.writeAndFlush(haProxyMessage);
-                            serverChannel.pipeline().remove(HAProxyMessageEncoder.INSTANCE);
                         }
+
                         //forward data to server
                         ByteBuf sendBuf = Unpooled.buffer();
-                        ByteBufUtils.writeVarInt(sendBuf, packetLength);
-                        ByteBufUtils.writeVarInt(sendBuf, packetID);
-                        ByteBufUtils.writeVarInt(sendBuf, clientVersion);
-                        ByteBufUtils.writeString(sendBuf, hostname);
-                        ByteBufUtils.writeVarShort(sendBuf, port);
-                        ByteBufUtils.writeVarInt(sendBuf, state);
-                        while (buf.readableBytes() > 0)
-                            sendBuf.writeByte(buf.readByte());
+                        ByteBufUtils.writeVarInt(sendBuf, slp.getPacketLength());
+                        ByteBufUtils.writeVarInt(sendBuf, slp.getPacketID());
+                        ByteBufUtils.writeVarInt(sendBuf, slp.getHandshake().getProtocolVersion());
+                        ByteBufUtils.writeString(sendBuf, slp.getHandshake().getServerAddress());
+                        sendBuf.writeShort(slp.getHandshake().getServerPort());
+                        ByteBufUtils.writeVarInt(sendBuf, slp.getHandshake().getNextState());
+                        ByteBufUtils.writeVarInt(sendBuf, statusRequest);
+                        ByteBufUtils.writeVarInt(sendBuf, pingRequest);
+
+                        sendBuf.writeBytes(buf);
+
                         serverChannel.writeAndFlush(sendBuf);
-                        if (state == 1) {
-                            if (Main.serverpingLog)
+                        if (slp.getHandshake().getNextState() == 1) {
+                            if (config.serverpingLog)
                                 Main.print(playerAddress.getAddress().getHostAddress() + ":" + playerAddress.getPort() + " -> " + node + " pinged (" + ping + "ms)");
                         } else {
-                            if (Main.connectingLog)
+                            if (config.connectingLog)
                                 Main.print(playerAddress.getAddress().getHostAddress() + ":" + playerAddress.getPort() + " -> " + node + " connected (" + ping + "ms)");
                         }
                     }
