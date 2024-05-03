@@ -1,4 +1,4 @@
-package top.speedcubing.minecraftproxy.netty;
+package top.speedcubing.minecraftproxy.server;
 
 import io.netty.handler.codec.haproxy.HAProxyProtocolVersion;
 

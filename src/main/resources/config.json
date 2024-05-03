@@ -6,25 +6,23 @@
   "nodes": [
     {
       "name": "example node",
+      "state": true,
       "localport": 20000,
       "servers": [
         {
-          "address": "example.com:30000",
+          "address": "125.229.58.240:25566",
           "proxy-protocol": "v2"
-        },
-        {
-          "address": "example.com:30001",
-          "proxy-protocol": "v1"
-        },
-        {
-          "address": "example.com:30002",
-          "proxy-protocol": "off"
         }
       ],
-      "state": true,
       "blockedCIDR": [],
-      "noConnection": false,
-      "kick": "kickMessage"
+
+      "statusRequest": true,
+
+      "loginRequest": true,
+      "loginRequestTimeout": true,
+
+      "kick": true,
+      "kickMessage": "kickMessage"
     }
   ]
 }

@@ -1,4 +1,4 @@
-package top.speedcubing.minecraftproxy.netty.handler;
+package top.speedcubing.minecraftproxy.handler;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -17,16 +17,16 @@ import io.netty.handler.codec.haproxy.HAProxyCommand;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.codec.haproxy.HAProxyMessageEncoder;
 import io.netty.handler.codec.haproxy.HAProxyProxiedProtocol;
-import io.netty.util.ReferenceCountUtil;
 import java.net.InetSocketAddress;
 import java.util.Random;
+import top.speedcubing.lib.minecraft.packet.HandshakePacket;
+import top.speedcubing.lib.minecraft.packet.MinecraftPacket;
 import top.speedcubing.lib.utils.bytes.ByteBufUtils;
-import top.speedcubing.minecraftproxy.netty.BackendServer;
-import top.speedcubing.minecraftproxy.netty.Main;
-import top.speedcubing.minecraftproxy.netty.Node;
-import top.speedcubing.minecraftproxy.netty.config;
-import top.speedcubing.minecraftproxy.netty.hand.Handshake;
-import top.speedcubing.minecraftproxy.netty.hand.SLP;
+import top.speedcubing.lib.utils.internet.ip.CIDR;
+import top.speedcubing.minecraftproxy.Main;
+import top.speedcubing.minecraftproxy.config;
+import top.speedcubing.minecraftproxy.server.BackendServer;
+import top.speedcubing.minecraftproxy.server.Node;
 
 public class ConnectionHandler extends ChannelInboundHandlerAdapter {
 
@@ -34,10 +34,12 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
     private final Node node;
     private EventLoopGroup eventLoop = null;
     private Channel serverChannel;
-    public int handshakeProgress = 1;
-    private SLP slp;
+    public State handshakeProgress = State.HANDSHAKE;
+    private int nextState;
+    private MinecraftPacket packet;
 
     public ConnectionHandler(Node node) {
+        System.out.println("new");
         Random r = new Random();
         this.node = node;
         this.server = node.servers.get(r.nextInt(node.servers.size()));
@@ -45,44 +47,80 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        InetSocketAddress playerAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+        //CIDR blocking
+        if (handshakeProgress != State.CONNECTED) {
+            InetSocketAddress playerAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+            for (CIDR cidr : node.blockedCIDR) {
+                if (cidr.contains(playerAddress.getAddress().getHostAddress())) {
+                    ctx.close();
+                    return;
+                }
+            }
+        }
 
         ByteBuf buf = (ByteBuf) msg;
-        if (handshakeProgress == 1) {
-            final int packetLength = ByteBufUtils.readVarInt(buf);
+
+        if (buf.readableBytes() == 0) {
+            return;
+        }
+
+        if (handshakeProgress == State.HANDSHAKE) {
+            int packetLength = ByteBufUtils.readVarInt(buf);
+
+            if (buf.readableBytes() < packetLength)
+                return;
+
             final int packetID = ByteBufUtils.readVarInt(buf);
 
             final int protocolVersion = ByteBufUtils.readVarInt(buf);
             final String serverAddress = ByteBufUtils.readString(buf);
             final int serverPort = buf.readUnsignedShort();
-            final int nextState = ByteBufUtils.readVarInt(buf);
 
-            if (nextState != 1) {
+            nextState = ByteBufUtils.readVarInt(buf);
+
+            //we'll ignore status request & ping request
+
+            //login
+            if (nextState == 1) {
+                if (!node.statusRequest) {
+                    ctx.channel().close();
+                    return;
+                }
+            }
+            if (nextState == 2) {
+                if (!node.loginRequest) {
+                    if (!node.loginRequestTimeout) {
+                        ctx.channel().close();
+                    }
+                    return;
+                }
+
                 if (node.kick) {
                     send(ctx, "\"" + node.kickMessage + "\"");
                     return;
                 }
             }
-            Handshake handshake = new Handshake(protocolVersion, serverAddress, serverPort, nextState);
-            slp = new SLP(packetLength, packetID, handshake);
-            handshakeProgress = 2;
+
+            packet = new MinecraftPacket(packetLength, packetID, new HandshakePacket(protocolVersion, serverAddress, serverPort, nextState).toByteArray());
+            handshakeProgress = State.STATUSREQUEST;
         }
-        if (handshakeProgress == 2) {
-            if (buf.readableBytes() > 0) {
-                final int statusRequest = ByteBufUtils.readVarInt(buf);
-                final int pingRequest = ByteBufUtils.readVarInt(buf);
-                forwardToServer(ctx, buf, playerAddress, statusRequest, pingRequest);
-                handshakeProgress = 3;
-            }
-        } else if (handshakeProgress == 3) {
-            if (node.noConnection) {
-                ctx.channel().close();
+
+        if (handshakeProgress == State.STATUSREQUEST) {
+            if (buf.readableBytes() == 0)
                 return;
-            }
+
+            forwardToServer(ctx, buf);
+            handshakeProgress = State.CONNECTED;
+            return;
+        }
+
+        if (handshakeProgress == State.CONNECTED) {
+            if (buf.readableBytes() == 0)
+                return;
             if (serverChannel != null)
-                serverChannel.writeAndFlush(msg);
+                serverChannel.writeAndFlush(buf);
             else
-                ReferenceCountUtil.release(msg);
+                buf.release();
         }
     }
 
@@ -100,9 +138,8 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
         ctx.close();
     }
 
-    void forwardToServer(ChannelHandlerContext ctx, ByteBuf buf, InetSocketAddress playerAddress, int statusRequest, int pingRequest) {
+    void forwardToServer(ChannelHandlerContext ctx, ByteBuf buffer) {
         eventLoop = new NioEventLoopGroup();
-
         long start = System.currentTimeMillis();
         new Bootstrap()
                 .group(eventLoop)
@@ -126,45 +163,37 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
                         cause.printStackTrace();
                         close();
                         ctx.close();
-                        buf.release();
                     }
                 }).connect(server.ip, server.port).addListener((ChannelFutureListener) future -> {
+                    InetSocketAddress playerAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+
                     serverChannel = future.channel();
-                    InetSocketAddress serverAddress = (InetSocketAddress) serverChannel.remoteAddress();
                     if (!future.isSuccess()) {
                         close();
                         ctx.close();
                     } else {
                         long ping = System.currentTimeMillis() - start;
+
                         if (server.HAProxy != null) {
                             serverChannel.pipeline().addFirst(HAProxyMessageEncoder.INSTANCE);
+                            InetSocketAddress serverAddress = (InetSocketAddress) serverChannel.remoteAddress();
                             HAProxyMessage haProxyMessage = new HAProxyMessage(server.HAProxy, HAProxyCommand.PROXY, HAProxyProxiedProtocol.TCP4, playerAddress.getAddress().getHostAddress(), serverAddress.getAddress().getHostAddress(), playerAddress.getPort(), serverAddress.getPort());
                             serverChannel.writeAndFlush(haProxyMessage);
+                            serverChannel.pipeline().remove(HAProxyMessageEncoder.INSTANCE);
                         }
 
                         //forward data to server
-                        ByteBuf sendBuf = Unpooled.buffer();
-                        ByteBufUtils.writeVarInt(sendBuf, slp.getPacketLength());
-                        ByteBufUtils.writeVarInt(sendBuf, slp.getPacketID());
-                        ByteBufUtils.writeVarInt(sendBuf, slp.getHandshake().getProtocolVersion());
-                        ByteBufUtils.writeString(sendBuf, slp.getHandshake().getServerAddress());
-                        sendBuf.writeShort(slp.getHandshake().getServerPort());
-                        ByteBufUtils.writeVarInt(sendBuf, slp.getHandshake().getNextState());
-                        ByteBufUtils.writeVarInt(sendBuf, statusRequest);
-                        ByteBufUtils.writeVarInt(sendBuf, pingRequest);
+                        serverChannel.writeAndFlush(Unpooled.wrappedBuffer(packet.toByteArray()));
+                        serverChannel.writeAndFlush(buffer);
 
-                        sendBuf.writeBytes(buf);
-
-                        serverChannel.writeAndFlush(sendBuf);
-                        if (slp.getHandshake().getNextState() == 1) {
+                        if (nextState == 1) {
                             if (config.serverpingLog)
                                 Main.print(playerAddress.getAddress().getHostAddress() + ":" + playerAddress.getPort() + " -> " + node + " pinged (" + ping + "ms)");
-                        } else {
+                        } else if (nextState == 2) {
                             if (config.connectingLog)
                                 Main.print(playerAddress.getAddress().getHostAddress() + ":" + playerAddress.getPort() + " -> " + node + " connected (" + ping + "ms)");
                         }
                     }
-                    buf.release();
                 });
     }
 
