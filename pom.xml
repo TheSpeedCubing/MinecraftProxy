@@ -45,7 +45,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <finalName>${project.artifactId}-${project.version}</finalName>
+                    <finalName>velocity</finalName>
                 </configuration>
             </plugin>
             <plugin>
@@ -58,7 +58,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>top.speedcubing.minecraftproxy.netty.Main</mainClass>
+                            <mainClass>top.speedcubing.minecraftproxy.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

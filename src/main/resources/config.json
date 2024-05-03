@@ -6,7 +6,10 @@
   "nodes": [
     {
       "name": "example node",
-      "localport": 20000,
+      "address": "127.0.0.1",
+      "port": 20000,
+      "tcpFastOpen": true,
+      "readTimeout": 30000,
       "servers": [
         {
           "address": "example.com:30000",
@@ -24,7 +27,11 @@
       "state": true,
       "blockedCIDR": [],
       "noConnection": false,
-      "kick": "kickMessage"
+      "statusRequest": true,
+      "loginRequest": true,
+      "loginRequestTimeout": false,
+      "kick": false,
+      "kickMessage": "kickMessage"
     }
   ]
 }
