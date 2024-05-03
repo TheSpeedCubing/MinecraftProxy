@@ -34,12 +34,13 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
     private final Node node;
     private EventLoopGroup eventLoop = null;
     private Channel serverChannel;
-    public State handshakeProgress = State.HANDSHAKE;
+    public State handshakeProgress = State.STATUSREQUEST;
     private int nextState;
+    private int packetLength;
     private MinecraftPacket packet;
 
     public ConnectionHandler(Node node) {
-        System.out.println("new");
+        Main.print(hashCode()+" created");
         Random r = new Random();
         this.node = node;
         this.server = node.servers.get(r.nextInt(node.servers.size()));
@@ -47,6 +48,7 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        String player = ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress();
         //CIDR blocking
         if (handshakeProgress != State.CONNECTED) {
             InetSocketAddress playerAddress = (InetSocketAddress) ctx.channel().remoteAddress();
@@ -60,50 +62,54 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
 
         ByteBuf buf = (ByteBuf) msg;
 
-        if (buf.readableBytes() == 0) {
-            return;
-        }
-
-        if (handshakeProgress == State.HANDSHAKE) {
-            int packetLength = ByteBufUtils.readVarInt(buf);
-
-            if (buf.readableBytes() < packetLength)
-                return;
-
-            final int packetID = ByteBufUtils.readVarInt(buf);
-
-            final int protocolVersion = ByteBufUtils.readVarInt(buf);
-            final String serverAddress = ByteBufUtils.readString(buf);
-            final int serverPort = buf.readUnsignedShort();
-
-            nextState = ByteBufUtils.readVarInt(buf);
-
-            //we'll ignore status request & ping request
-
-            //login
-            if (nextState == 1) {
-                if (!node.statusRequest) {
-                    ctx.channel().close();
-                    return;
-                }
-            }
-            if (nextState == 2) {
-                if (!node.loginRequest) {
-                    if (!node.loginRequestTimeout) {
-                        ctx.channel().close();
-                    }
-                    return;
-                }
-
-                if (node.kick) {
-                    send(ctx, "\"" + node.kickMessage + "\"");
-                    return;
-                }
-            }
-
-            packet = new MinecraftPacket(packetLength, packetID, new HandshakePacket(protocolVersion, serverAddress, serverPort, nextState).toByteArray());
-            handshakeProgress = State.STATUSREQUEST;
-        }
+//        Main.print(player + " readable = " + buf.readableBytes());
+//        if (buf.readableBytes() == 0) {
+//            return;
+//        }
+//
+//        if (handshakeProgress == State.HANDSHAKE) {
+//            packetLength = ByteBufUtils.readVarInt(buf);
+//            handshakeProgress = State.HANDSHAKE2;
+//        }
+//        if (handshakeProgress == State.HANDSHAKE2) {
+//            Main.print(player + " readable = " + buf.readableBytes() + ", packetlen = " + packetLength);
+//            if (buf.readableBytes() < packetLength)
+//                return;
+//
+//            final int packetID = ByteBufUtils.readVarInt(buf);
+//
+//            final int protocolVersion = ByteBufUtils.readVarInt(buf);
+//            final String serverAddress = ByteBufUtils.readString(buf);
+//            final int serverPort = buf.readUnsignedShort();
+//
+//            nextState = ByteBufUtils.readVarInt(buf);
+//
+//            //we'll ignore status request & ping request
+//
+//            //login
+//            if (nextState == 1) {
+//                if (!node.statusRequest) {
+//                    ctx.channel().close();
+//                    return;
+//                }
+//            }
+//            if (nextState == 2) {
+//                if (!node.loginRequest) {
+//                    if (!node.loginRequestTimeout) {
+//                        ctx.channel().close();
+//                    }
+//                    return;
+//                }
+//
+//                if (node.kick) {
+//                    send(ctx, "\"" + node.kickMessage + "\"");
+//                    return;
+//                }
+//            }
+//
+//            packet = new MinecraftPacket(packetLength, packetID, new HandshakePacket(protocolVersion, serverAddress, serverPort, nextState).toByteArray());
+//            handshakeProgress = State.STATUSREQUEST;
+//        }
 
         if (handshakeProgress == State.STATUSREQUEST) {
             if (buf.readableBytes() == 0)
@@ -183,7 +189,7 @@ public class ConnectionHandler extends ChannelInboundHandlerAdapter {
                         }
 
                         //forward data to server
-                        serverChannel.writeAndFlush(Unpooled.wrappedBuffer(packet.toByteArray()));
+//                        serverChannel.writeAndFlush(Unpooled.wrappedBuffer(packet.toByteArray()));
                         serverChannel.writeAndFlush(buffer);
 
                         if (nextState == 1) {

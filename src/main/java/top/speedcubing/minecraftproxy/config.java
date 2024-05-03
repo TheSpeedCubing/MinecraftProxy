@@ -41,7 +41,6 @@ public class config {
             for (Node n : copiedNodes) {
                 n.bossGroup.shutdownGracefully();
                 n.workerGroup.shutdownGracefully();
-                n.future.channel().close();
             }
         } catch (Exception e) {
             Main.print("config.json error");
@@ -56,8 +55,6 @@ public class config {
             } catch (Exception e) {
                 n.bossGroup.shutdownGracefully();
                 n.workerGroup.shutdownGracefully();
-                if (n.future != null)
-                    n.future.channel().close();
                 e.printStackTrace();
             }
         }
