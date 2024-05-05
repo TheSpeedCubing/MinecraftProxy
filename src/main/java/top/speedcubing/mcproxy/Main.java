@@ -1,4 +1,4 @@
-package top.speedcubing.minecraftproxy;
+package top.speedcubing.mcproxy;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;

@@ -1,14 +1,11 @@
 {
-  "log": {
-    "serverping": true,
-    "connection": true
-  },
   "nodes": [
     {
       "name": "example node",
       "address": "127.0.0.1",
       "port": 20000,
       "tcpFastOpen": true,
+      "disableNativeTransport": true,
       "readTimeout": 30000,
       "servers": [
         {
@@ -25,13 +22,7 @@
         }
       ],
       "state": true,
-      "blockedCIDR": [],
-      "noConnection": false,
-      "statusRequest": true,
-      "loginRequest": true,
-      "loginRequestTimeout": false,
-      "kick": false,
-      "kickMessage": "kickMessage"
+      "blockedCIDR": []
     }
   ]
 }

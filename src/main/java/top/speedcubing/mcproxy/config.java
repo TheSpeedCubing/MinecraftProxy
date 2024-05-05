@@ -1,4 +1,4 @@
-package top.speedcubing.minecraftproxy;
+package top.speedcubing.mcproxy;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -11,12 +11,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import top.speedcubing.minecraftproxy.server.Node;
+import top.speedcubing.mcproxy.server.Node;
 
 public class config {
-
-    public static boolean serverpingLog = true;
-    public static boolean connectingLog = true;
     public static List<Node> nodeSet = new ArrayList<>();
 
     public static void reload() {
@@ -27,8 +24,6 @@ public class config {
                 Files.copy(file, Paths.get("config.json"), StandardCopyOption.REPLACE_EXISTING);
             }
             JsonObject object = JsonParser.parseReader(new FileReader("config.json")).getAsJsonObject();
-            serverpingLog = object.getAsJsonObject("log").get("serverping").getAsBoolean();
-            connectingLog = object.getAsJsonObject("log").get("connection").getAsBoolean();
 
             nodeSet.clear();
             for (JsonElement j : object.get("nodes").getAsJsonArray()) {
