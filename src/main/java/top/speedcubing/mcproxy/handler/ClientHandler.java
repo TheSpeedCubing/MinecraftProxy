@@ -67,24 +67,27 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 
     }
 
-    void connectToServer(ChannelHandlerContext clientChannelHandler) throws InterruptedException {
+    void connectToServer(ChannelHandlerContext clientHandler) throws InterruptedException {
         eventLoop = new NioEventLoopGroup();
         long start = System.currentTimeMillis();
         Bootstrap bootstrap = new Bootstrap()
+                .channelFactory(node.transportType.socketChannelFactory)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, server.readTimeout)
                 .group(eventLoop)
-                .channel(NioSocketChannel.class)
-                .option(ChannelOption.SO_KEEPALIVE, true)
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
-                .handler(new ServerInitializer(this, clientChannelHandler.channel()));
+                .handler(new ServerInitializer(this, clientHandler.channel()));
+
+//        if (server.tcpFastOpen)
+//                    bootstrap.option(ChannelOption.TCP_FASTOPEN, 3);
         ChannelFuture future = bootstrap.connect(server.ip, server.port).sync();
         this.serverChannel = future.channel();
 
         if (!future.isSuccess()) {
-            closeEverything(clientChannelHandler);
+            closeEverything(clientHandler);
         } else {
             long ping = System.currentTimeMillis() - start;
 
-            InetSocketAddress playerAddress = (InetSocketAddress) clientChannelHandler.channel().remoteAddress();
+            InetSocketAddress playerAddress = (InetSocketAddress) clientHandler.channel().remoteAddress();
 
             if (server.HAProxy != null) {
                 this.serverChannel.pipeline().addFirst(HAProxyMessageEncoder.INSTANCE);

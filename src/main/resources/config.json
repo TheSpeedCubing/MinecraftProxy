@@ -10,15 +10,21 @@
       "servers": [
         {
           "address": "example.com:30000",
-          "proxy-protocol": "v2"
+          "proxy-protocol": "v2",
+          "tcpFastOpen": true,
+          "readTimeout": 30000
         },
         {
           "address": "example.com:30001",
-          "proxy-protocol": "v1"
+          "proxy-protocol": "v1",
+          "tcpFastOpen": true,
+          "readTimeout": 30000
         },
         {
           "address": "example.com:30002",
-          "proxy-protocol": "off"
+          "proxy-protocol": "off",
+          "tcpFastOpen": true,
+          "readTimeout": 30000
         }
       ],
       "state": true,

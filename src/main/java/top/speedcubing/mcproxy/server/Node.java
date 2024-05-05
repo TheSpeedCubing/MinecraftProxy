@@ -26,14 +26,14 @@ public class Node {
     public final List<BackendServer> servers;
     public final Set<CIDR> blockedCIDR;
 
-    private final TransportType transportType;
+    public final TransportType transportType;
     public final EventLoopGroup bossGroup;
     public final EventLoopGroup workerGroup;
 
     public Node(JsonObject o) {
 
         List<BackendServer> servers = new ArrayList<>();
-        o.get("servers").getAsJsonArray().forEach(a -> servers.add(new BackendServer(a.getAsJsonObject().get("address").getAsString(), a.getAsJsonObject().get("proxy-protocol").getAsString())));
+        o.get("servers").getAsJsonArray().forEach(a -> servers.add(new BackendServer(a.getAsJsonObject())));
 
         Set<CIDR> blockedCIDR = new HashSet<>();
         o.get("blockedCIDR").getAsJsonArray().forEach(a -> blockedCIDR.add(new CIDR(a.getAsString())));
