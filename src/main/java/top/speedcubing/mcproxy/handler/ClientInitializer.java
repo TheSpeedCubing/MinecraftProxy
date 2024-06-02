@@ -17,7 +17,7 @@ public class ClientInitializer extends ChannelInitializer<Channel> {
 
     @Override
     public void initChannel(Channel ch) {
-        ch.pipeline().addLast("read-timeout", new ReadTimeoutHandler(node.readTimeout, TimeUnit.MILLISECONDS));
+        ch.pipeline().addLast("read-timeout", new ReadTimeoutHandler(node.getSetting("readTimeout").getAsInteger(), TimeUnit.MILLISECONDS));
         ch.pipeline().addLast("client-handler", new ClientHandler(node));
     }
 

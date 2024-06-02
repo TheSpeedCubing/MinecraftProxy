@@ -9,7 +9,6 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.haproxy.HAProxyCommand;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.codec.haproxy.HAProxyMessageEncoder;
@@ -97,7 +96,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
                 serverChannel.pipeline().remove(HAProxyMessageEncoder.INSTANCE);
             }
 
-            if (node.log)
+            if (node.getSetting("log").getAsBoolean())
                 Main.print(playerAddress.getAddress().getHostAddress() + ":" + playerAddress.getPort() + " -> " + node + " connected (" + ping + "ms)");
         }
     }

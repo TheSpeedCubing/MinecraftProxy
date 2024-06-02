@@ -17,6 +17,8 @@ public class Main {
     public static void main(String[] args) {
         print("loading netty proxy...");
         Scanner scanner = new Scanner(System.in);
+        config.move();
+        config.reload();
         new Thread(() -> {
             while (scanner.hasNext()) {
                 switch (scanner.nextLine()) {
@@ -41,6 +43,5 @@ public class Main {
                 }
             }
         }).start();
-        config.reload();
     }
 }

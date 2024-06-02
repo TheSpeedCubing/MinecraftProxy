@@ -1,9 +1,9 @@
 package top.speedcubing.mcproxy.server;
 
-import com.google.gson.JsonObject;
 import com.velocitypowered.proxy.util.concurrent.TransportType;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -18,40 +18,61 @@ import top.speedcubing.mcproxy.Main;
 import top.speedcubing.mcproxy.handler.ClientInitializer;
 
 public class Node {
-    public final String name;
     private final InetSocketAddress address;
-    private final boolean tcpFastOpen;
-    public final int readTimeout;
-    public final boolean log;
-    public final List<BackendServer> servers;
-    public final Set<CIDR> blockedCIDR;
+    private NodeSetting nodeSetting;
 
-    public final TransportType transportType;
-    public final EventLoopGroup bossGroup;
-    public final EventLoopGroup workerGroup;
+    public Set<CIDR> blockedCIDR;
+    public List<BackendServer> servers;
 
-    public Node(JsonObject o) {
+    public TransportType transportType;
+    private EventLoopGroup bossGroup;
+    private EventLoopGroup workerGroup;
 
-        List<BackendServer> servers = new ArrayList<>();
-        o.get("servers").getAsJsonArray().forEach(a -> servers.add(new BackendServer(a.getAsJsonObject())));
+    private ChannelFuture future;
+
+    public Node(InetSocketAddress address, NodeSetting nodeSetting) {
+        this.address = address;
+
+        loadSettings(nodeSetting);
+
+        this.transportType = TransportType.bestType(getSetting("disableNativeTransport").getAsBoolean());
+    }
+
+    public InetSocketAddress getAddress() {
+        return address;
+    }
+
+    public Setting getSetting(String name) {
+        return nodeSetting.getSettings().get(name);
+    }
+
+    public boolean loadSettings(NodeSetting other) {
+        if (nodeSetting != null && nodeSetting.requireRestart(other)) {
+            return true;
+        }
+        this.nodeSetting = other;
 
         Set<CIDR> blockedCIDR = new HashSet<>();
-        o.get("blockedCIDR").getAsJsonArray().forEach(a -> blockedCIDR.add(new CIDR(a.getAsString())));
-
-        this.name = o.get("name").getAsString();
-
-        this.log = o.get("log").getAsBoolean();
-
-        this.address = new InetSocketAddress(o.get("address").getAsString(), o.get("port").getAsInt());
-        this.tcpFastOpen = o.get("tcpFastOpen").getAsBoolean();
-        this.readTimeout = o.get("readTimeout").getAsInt();
-
-        this.servers = servers;
+        getSetting("blockedCIDR").getAsJsonArray().forEach(a -> blockedCIDR.add(new CIDR(a.getAsString())));
         this.blockedCIDR = blockedCIDR;
 
-        this.transportType = TransportType.bestType(o.get("disableNativeTransport").getAsBoolean());
-        this.bossGroup = this.transportType.createEventLoopGroup("Boss");
-        this.workerGroup = this.transportType.createEventLoopGroup("Worker");
+        List<BackendServer> servers = new ArrayList<>();
+        getSetting("servers").getAsJsonArray().forEach(a -> servers.add(new BackendServer(a.getAsJsonObject())));
+        this.servers = servers;
+
+        return false;
+    }
+
+    public void startup() {
+        try {
+            this.bossGroup = this.transportType.createEventLoopGroup("Boss");
+            this.workerGroup = this.transportType.createEventLoopGroup("Worker");
+            createBootstrap();
+            Main.print("Created ServerBootstrap for " + this);
+        } catch (Exception e) {
+            shutdown();
+            e.printStackTrace();
+        }
     }
 
     public void createBootstrap() {
@@ -64,10 +85,12 @@ public class Node {
                 .childHandler(new ClientInitializer(this))
                 .localAddress(address);
 
-        if (tcpFastOpen)
+        if (getSetting("tcpFastOpen").getAsBoolean())
             bootstrap.option(ChannelOption.TCP_FASTOPEN, 3);
 
-        bootstrap.bind().addListener((ChannelFutureListener) future -> {
+        future = bootstrap.bind();
+
+        future.addListener((ChannelFutureListener) future -> {
             final Channel channel = future.channel();
             if (future.isSuccess()) {
                 Main.print("Listening on " + channel.localAddress());
@@ -77,7 +100,21 @@ public class Node {
         });
     }
 
+    public void shutdown() {
+        if (future != null) {
+            future.channel().close().addListener((ChannelFutureListener) future -> {
+                bossGroup.shutdownGracefully();
+                workerGroup.shutdownGracefully();
+            });
+        } else {
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }
+    }
+
+
+    @Override
     public String toString() {
-        return name;
+        return "Node{name=" + getSetting("name").getAsString() + ",bind=" + address + "}";
     }
 }
