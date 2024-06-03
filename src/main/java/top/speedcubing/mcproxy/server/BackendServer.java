@@ -6,7 +6,6 @@ import io.netty.handler.codec.haproxy.HAProxyProtocolVersion;
 public class BackendServer {
     public String ip;
     public int port;
-    public final boolean tcpFastOpen;
     public final int readTimeout;
     public HAProxyProtocolVersion HAProxy;
 
@@ -16,7 +15,6 @@ public class BackendServer {
         this.ip = s[0];
         this.port = s.length == 1 ? 25565 : Integer.parseInt(s[1]);
 
-        this.tcpFastOpen = o.get("tcpFastOpen").getAsBoolean();
         this.readTimeout = o.get("readTimeout").getAsInt();
 
         switch (o.getAsJsonObject().get("proxy-protocol").getAsString()) {

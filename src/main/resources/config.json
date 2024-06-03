@@ -2,6 +2,7 @@
   "nodes": [
     {
       "name": "example node",
+      "log": false,
       "address": "127.0.0.1",
       "port": 20000,
       "tcpFastOpen": true,
@@ -11,19 +12,16 @@
         {
           "address": "example.com:30000",
           "proxy-protocol": "v2",
-          "tcpFastOpen": true,
           "readTimeout": 30000
         },
         {
           "address": "example.com:30001",
           "proxy-protocol": "v1",
-          "tcpFastOpen": true,
           "readTimeout": 30000
         },
         {
           "address": "example.com:30002",
           "proxy-protocol": "off",
-          "tcpFastOpen": true,
           "readTimeout": 30000
         }
       ],
