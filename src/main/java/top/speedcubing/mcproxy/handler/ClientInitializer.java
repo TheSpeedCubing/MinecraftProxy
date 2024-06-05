@@ -28,7 +28,7 @@ public class ClientInitializer extends ChannelInitializer<Channel> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        Main.print("(1) ");
+        Main.print("(ClientInitializer) ");
         cause.printStackTrace();
         ctx.close();
     }

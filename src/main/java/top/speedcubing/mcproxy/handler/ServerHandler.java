@@ -28,7 +28,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        Main.print("(2) ");
+        Main.print("(ServerHandler) ");
         cause.printStackTrace();
         clientHandler.closeEverything(ctx);
     }

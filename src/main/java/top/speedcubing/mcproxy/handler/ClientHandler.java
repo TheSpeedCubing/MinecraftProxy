@@ -118,7 +118,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        Main.print("(1) ");
+        Main.print("(ClientInitializer) ");
         cause.printStackTrace();
         closeEverything(ctx);
     }
