@@ -11,7 +11,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     private final ClientHandler clientHandler;
     private final Channel clientChannel;
 
-    public ServerHandler(ClientHandler clientHandler, Channel clientChannel) {
+    ServerHandler(ClientHandler clientHandler, Channel clientChannel) {
         this.clientHandler = clientHandler;
         this.clientChannel = clientChannel;
     }

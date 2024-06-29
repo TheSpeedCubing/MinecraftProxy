@@ -29,7 +29,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     private Channel serverChannel;
 
 
-    public ClientHandler(Node node) {
+    ClientHandler(Node node) {
         Random r = new Random();
         this.node = node;
         this.server = node.servers.get(r.nextInt(node.servers.size()));

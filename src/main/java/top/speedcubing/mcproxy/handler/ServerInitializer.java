@@ -9,7 +9,7 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
     private final ClientHandler clientHandler;
     private final Channel clientChannel;
 
-    public ServerInitializer(ClientHandler clientHandler, Channel clientChannel) {
+    ServerInitializer(ClientHandler clientHandler, Channel clientChannel) {
         this.clientHandler = clientHandler;
         this.clientChannel = clientChannel;
     }
