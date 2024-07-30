@@ -1,12 +1,17 @@
 package top.speedcubing.mcproxy;
 
+import io.netty.util.ResourceLeakDetector;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import top.speedcubing.lib.utils.SystemUtils;
+import top.speedcubing.mcproxy.session.Session;
 
 public class Main {
 
@@ -15,6 +20,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.PARANOID);
         print("loading netty proxy...");
         Scanner scanner = new Scanner(System.in);
         config.move();

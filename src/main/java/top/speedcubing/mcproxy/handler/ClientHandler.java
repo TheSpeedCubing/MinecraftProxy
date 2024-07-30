@@ -1,7 +1,6 @@
 package top.speedcubing.mcproxy.handler;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -10,6 +9,8 @@ import io.netty.handler.codec.haproxy.HAProxyCommand;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.codec.haproxy.HAProxyMessageEncoder;
 import io.netty.handler.codec.haproxy.HAProxyProxiedProtocol;
+import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import java.net.InetSocketAddress;
 import java.util.Random;
 import top.speedcubing.lib.utils.internet.ip.CIDR;
@@ -23,7 +24,6 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     private boolean isConnectedToServer = false;
     public final Session session;
 
-
     ClientHandler(Session session) {
         Random r = new Random();
         this.session = session;
@@ -31,19 +31,18 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws InterruptedException {
         //CIDR blocking
         if (!isConnectedToServer) {
             InetSocketAddress playerAddress = (InetSocketAddress) ctx.channel().remoteAddress();
             for (CIDR cidr : session.node.blockedCIDR) {
                 if (cidr.contains(playerAddress.getAddress().getHostAddress())) {
                     session.close(ctx);
+                    ReferenceCountUtil.release(msg);
                     return;
                 }
             }
         }
-
-        ByteBuf buf = (ByteBuf) msg;
 
         if (!isConnectedToServer) {
             try {
@@ -54,7 +53,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
             }
         }
 
-        session.serverChannel.writeAndFlush(buf);
+        session.serverChannel.writeAndFlush(msg);
     }
 
     void connectToServer(ChannelHandlerContext clientHandler) throws InterruptedException {

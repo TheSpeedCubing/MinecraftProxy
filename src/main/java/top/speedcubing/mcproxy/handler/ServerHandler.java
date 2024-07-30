@@ -6,7 +6,6 @@ import top.speedcubing.mcproxy.session.Session;
 
 public class ServerHandler extends ChannelInboundHandlerAdapter {
 
-
     private final Session session;
 
     ServerHandler(Session session) {
@@ -14,7 +13,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws InterruptedException {
         session.clientChannel.writeAndFlush(msg);
     }
 

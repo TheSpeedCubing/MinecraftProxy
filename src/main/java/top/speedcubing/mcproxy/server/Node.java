@@ -4,7 +4,6 @@ import com.velocitypowered.proxy.util.concurrent.TransportType;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
@@ -30,7 +29,7 @@ public class Node {
     private EventLoopGroup workerGroup;
     public EventLoopGroup clientWorkerGroup;
 
-    private ChannelFuture future;
+    private Channel channel;
     public int sessionCount = 0;
 
     public Node(InetSocketAddress address, NodeSetting nodeSetting) {
@@ -79,43 +78,41 @@ public class Node {
         }
     }
 
-    public void createBootstrap() {
+    public void createBootstrap() throws InterruptedException {
         ServerBootstrap bootstrap = new ServerBootstrap()
                 .channelFactory(this.transportType.serverSocketChannelFactory)
                 .group(this.bossGroup, this.workerGroup)
                 .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1 << 20, 1 << 21))
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.IP_TOS, 0x18)
-                .childHandler(new ClientInitializer(new Session(this)))
+                .childHandler(new ClientInitializer(this))
                 .localAddress(address);
 
         if (getSetting("tcpFastOpen").getAsBoolean())
             bootstrap.option(ChannelOption.TCP_FASTOPEN, 3);
 
-        future = bootstrap.bind();
+        ChannelFuture future = bootstrap.bind().sync();
+        channel = future.channel();
 
-        future.addListener((ChannelFutureListener) future -> {
-            final Channel channel = future.channel();
-            if (future.isSuccess()) {
-                Main.print("Listening on " + channel.localAddress());
-            } else {
-                Main.print("Can't bind to " + address + "\n" + future.cause());
-            }
-        });
+        if (future.isSuccess()) {
+            Main.print("Listening on " + channel.localAddress());
+        } else {
+            Main.print("Can't bind to " + address + "\n" + future.cause());
+        }
+
     }
 
     public void shutdown() {
-        if (future != null) {
-            future.channel().close().addListener((ChannelFutureListener) future -> {
-                bossGroup.shutdownGracefully();
-                workerGroup.shutdownGracefully();
-                //  clientworkerGroup.shutdownGracefully();
-            });
-        } else {
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
-            //   clientworkerGroup.shutdownGracefully();
+        if (channel != null) {
+            try {
+                channel.close().sync();
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
         }
+        bossGroup.shutdownGracefully();
+        workerGroup.shutdownGracefully();
+        clientWorkerGroup.shutdownGracefully();
     }
 
 
