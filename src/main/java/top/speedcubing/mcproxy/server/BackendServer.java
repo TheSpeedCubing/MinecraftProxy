@@ -17,7 +17,7 @@ public class BackendServer {
 
         this.readTimeout = o.get("readTimeout").getAsInt();
 
-        switch (o.getAsJsonObject().get("proxy-protocol").getAsString()) {
+        switch (o.get("proxy-protocol").getAsString()) {
             case "v1":
                 this.HAProxy = HAProxyProtocolVersion.V1;
                 break;

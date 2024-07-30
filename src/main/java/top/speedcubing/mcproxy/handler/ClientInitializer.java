@@ -5,31 +5,28 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import java.util.concurrent.TimeUnit;
-import top.speedcubing.mcproxy.Main;
-import top.speedcubing.mcproxy.server.Node;
+import top.speedcubing.mcproxy.session.Session;
 
 public class ClientInitializer extends ChannelInitializer<Channel> {
-    private final Node node;
+    private final Session session;
 
-    public ClientInitializer(Node node) {
-        this.node = node;
+    public ClientInitializer(Session session) {
+        this.session = session;
     }
 
     @Override
     public void initChannel(Channel ch) {
-        ch.pipeline().addLast("read-timeout", new ReadTimeoutHandler(node.getSetting("readTimeout").getAsInteger(), TimeUnit.MILLISECONDS));
-        ch.pipeline().addLast("client-handler", new ClientHandler(node));
+        ch.pipeline().addLast("read-timeout", new ReadTimeoutHandler(session.node.getSetting("readTimeout").getAsInteger(), TimeUnit.MILLISECONDS));
+        ch.pipeline().addLast("client-handler", new ClientHandler(session));
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        ctx.close();
+        session.close(ctx);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        Main.print("(ClientInitializer) ");
-        cause.printStackTrace();
-        ctx.close();
+        session.handleException(ctx, cause, "ClientInitializer");
     }
 }

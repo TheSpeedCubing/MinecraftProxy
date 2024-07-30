@@ -48,7 +48,7 @@ public class config {
                     }
 
                     if (createNew) {
-                        if(foundNode != null){
+                        if (foundNode != null) {
                             foundNode.shutdown();
                         }
                         NodeList.removeNodeByAddress(address);

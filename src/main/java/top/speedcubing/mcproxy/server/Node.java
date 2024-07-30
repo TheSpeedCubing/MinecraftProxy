@@ -16,6 +16,7 @@ import java.util.Set;
 import top.speedcubing.lib.utils.internet.ip.CIDR;
 import top.speedcubing.mcproxy.Main;
 import top.speedcubing.mcproxy.handler.ClientInitializer;
+import top.speedcubing.mcproxy.session.Session;
 
 public class Node {
     private final InetSocketAddress address;
@@ -27,8 +28,10 @@ public class Node {
     public TransportType transportType;
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
+    public EventLoopGroup clientWorkerGroup;
 
     private ChannelFuture future;
+    public int sessionCount = 0;
 
     public Node(InetSocketAddress address, NodeSetting nodeSetting) {
         this.address = address;
@@ -67,6 +70,7 @@ public class Node {
         try {
             this.bossGroup = this.transportType.createEventLoopGroup("Boss");
             this.workerGroup = this.transportType.createEventLoopGroup("Worker");
+            this.clientWorkerGroup = this.transportType.createEventLoopGroup("Worker");
             createBootstrap();
             Main.print("Created ServerBootstrap for " + this);
         } catch (Exception e) {
@@ -82,7 +86,7 @@ public class Node {
                 .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1 << 20, 1 << 21))
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.IP_TOS, 0x18)
-                .childHandler(new ClientInitializer(this))
+                .childHandler(new ClientInitializer(new Session(this)))
                 .localAddress(address);
 
         if (getSetting("tcpFastOpen").getAsBoolean())
@@ -105,10 +109,12 @@ public class Node {
             future.channel().close().addListener((ChannelFutureListener) future -> {
                 bossGroup.shutdownGracefully();
                 workerGroup.shutdownGracefully();
+                //  clientworkerGroup.shutdownGracefully();
             });
         } else {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
+            //   clientworkerGroup.shutdownGracefully();
         }
     }
 
