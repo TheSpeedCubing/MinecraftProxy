@@ -17,21 +17,21 @@ public class ClientInitializer extends ChannelInitializer<Channel> {
     }
 
     @Override
-    public void initChannel(Channel ch) {
+    public void initChannel(Channel channel) {
         this.session = new Session(node);
-        ch.pipeline().addLast("read-timeout", new ReadTimeoutHandler(session.node.getSetting("readTimeout").getAsInteger(), TimeUnit.MILLISECONDS));
-        ch.pipeline().addLast("client-handler", new ClientHandler(session));
+        channel.pipeline().addLast("read-timeout", new ReadTimeoutHandler(session.node.getSetting("readTimeout").getAsInteger(), TimeUnit.MILLISECONDS));
+        channel.pipeline().addLast("client-handler", new ClientHandler(session));
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
         if (session != null)
-            session.close(ctx);
+            session.close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         if (session != null)
-            session.handleException(ctx, cause, "ClientInitializer");
+            session.handleException(cause, "ClientInitializer");
     }
 }

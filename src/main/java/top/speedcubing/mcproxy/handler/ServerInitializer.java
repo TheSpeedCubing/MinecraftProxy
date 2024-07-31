@@ -19,11 +19,11 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        session.close(ctx);
+        session.close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        session.handleException(ctx, cause, "ServerInitializer");
+        session.handleException(cause, "ServerInitializer");
     }
 }

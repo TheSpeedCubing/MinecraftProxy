@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import top.speedcubing.lib.utils.SystemUtils;
+import top.speedcubing.mcproxy.server.Node;
 import top.speedcubing.mcproxy.session.Session;
 
 public class Main {
@@ -38,7 +39,12 @@ public class Main {
                     case "gc":
                         System.gc();
                         break;
-                    case "print":
+                    case "node":
+                        for(Node n : NodeList.nodes) {
+                            Main.print(n);
+                        }
+                        break;
+                    case "thread":
                         Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
                         Main.print(threadSet);
                         break;

@@ -10,7 +10,6 @@ import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.codec.haproxy.HAProxyMessageEncoder;
 import io.netty.handler.codec.haproxy.HAProxyProxiedProtocol;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.ReferenceCounted;
 import java.net.InetSocketAddress;
 import java.util.Random;
 import top.speedcubing.lib.utils.internet.ip.CIDR;
@@ -31,13 +30,19 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws InterruptedException {
+    public void handlerAdded(ChannelHandlerContext ctx) {
+        session.clientHandler = ctx;
+        session.clientChannel = ctx.channel();
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         //CIDR blocking
         if (!isConnectedToServer) {
             InetSocketAddress playerAddress = (InetSocketAddress) ctx.channel().remoteAddress();
             for (CIDR cidr : session.node.blockedCIDR) {
                 if (cidr.contains(playerAddress.getAddress().getHostAddress())) {
-                    session.close(ctx);
+                    session.close();
                     ReferenceCountUtil.release(msg);
                     return;
                 }
@@ -50,6 +55,10 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
                 isConnectedToServer = true;
             } catch (InterruptedException e) {
                 e.printStackTrace();
+
+                session.close();
+                ReferenceCountUtil.release(msg);
+                return;
             }
         }
 
@@ -57,7 +66,6 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     }
 
     void connectToServer(ChannelHandlerContext clientHandler) throws InterruptedException {
-        session.clientChannel = clientHandler.channel();
 
         long start = System.currentTimeMillis();
 
@@ -69,36 +77,36 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
                 .handler(new ServerInitializer(session));
 
         ChannelFuture future = bootstrap.connect(server.ip, server.port).sync();
-        session.serverChannel = future.channel();
 
         if (!future.isSuccess()) {
-            session.close(clientHandler);
+            session.close();
             return;
         }
 
         long ping = System.currentTimeMillis() - start;
 
-        InetSocketAddress playerAddress = (InetSocketAddress) clientHandler.channel().remoteAddress();
+        InetSocketAddress clientAddr = (InetSocketAddress) clientHandler.channel().remoteAddress();
 
+        //HAProxy Protocol
         if (server.HAProxy != null) {
             session.serverChannel.pipeline().addFirst(HAProxyMessageEncoder.INSTANCE);
             InetSocketAddress serverAddress = (InetSocketAddress) session.serverChannel.remoteAddress();
-            HAProxyMessage haProxyMessage = new HAProxyMessage(server.HAProxy, HAProxyCommand.PROXY, HAProxyProxiedProtocol.TCP4, playerAddress.getAddress().getHostAddress(), serverAddress.getAddress().getHostAddress(), playerAddress.getPort(), serverAddress.getPort());
+            HAProxyMessage haProxyMessage = new HAProxyMessage(server.HAProxy, HAProxyCommand.PROXY, HAProxyProxiedProtocol.TCP4, clientAddr.getAddress().getHostAddress(), serverAddress.getAddress().getHostAddress(), clientAddr.getPort(), serverAddress.getPort());
             session.serverChannel.writeAndFlush(haProxyMessage);
             session.serverChannel.pipeline().remove(HAProxyMessageEncoder.INSTANCE);
         }
 
         if (session.node.getSetting("log").getAsBoolean())
-            Main.print(playerAddress.getAddress().getHostAddress() + ":" + playerAddress.getPort() + " -> " + session.node + " connected (" + ping + "ms)");
+            Main.print(clientAddr.getAddress().getHostAddress() + ":" + clientAddr.getPort() + " -> " + session.node + " connected (" + ping + "ms)");
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        session.close(ctx);
+        session.close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        session.handleException(ctx, cause, "ClientHandler");
+        session.handleException(cause, "ClientHandler");
     }
 }

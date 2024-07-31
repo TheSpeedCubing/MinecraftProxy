@@ -13,17 +13,23 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws InterruptedException {
+    public void handlerAdded(ChannelHandlerContext ctx) {
+        session.serverHandler = ctx;
+        session.serverChannel = ctx.channel();
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         session.clientChannel.writeAndFlush(msg);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        session.close(ctx);
+        session.close();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        session.handleException(ctx, cause, "ServerHandler");
+        session.handleException(cause, "ServerHandler");
     }
 }

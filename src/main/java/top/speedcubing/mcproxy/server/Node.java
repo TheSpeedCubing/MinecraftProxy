@@ -15,7 +15,6 @@ import java.util.Set;
 import top.speedcubing.lib.utils.internet.ip.CIDR;
 import top.speedcubing.mcproxy.Main;
 import top.speedcubing.mcproxy.handler.ClientInitializer;
-import top.speedcubing.mcproxy.session.Session;
 
 public class Node {
     private final InetSocketAddress address;
@@ -118,6 +117,6 @@ public class Node {
 
     @Override
     public String toString() {
-        return "Node{name=" + getSetting("name").getAsString() + ",bind=" + address + "}";
+        return "Node{name=" + getSetting("name").getAsString() + ",bind=" + address + ",sessions=" + sessionCount + "}";
     }
 }
