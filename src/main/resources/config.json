@@ -2,12 +2,13 @@
   "nodes": [
     {
       "name": "example node",
-      "log": false,
-      "address": "127.0.0.1",
-      "port": 20000,
-      "tcpFastOpen": true,
+      "address": "127.0.0.1:20000",
       "disableNativeTransport": true,
+      "log": false,
+      "proxy-protocol": false,
       "readTimeout": 30000,
+      "state": true,
+      "tcpFastOpen": true,
       "servers": [
         {
           "address": "example.com:30000",
@@ -25,7 +26,6 @@
           "readTimeout": 30000
         }
       ],
-      "state": true,
       "blockedCIDR": []
     }
   ]

@@ -76,7 +76,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
                 .group(session.node.clientWorkerGroup)
                 .handler(new ServerInitializer(session));
 
-        ChannelFuture future = bootstrap.connect(server.ip, server.port).sync();
+        ChannelFuture future = bootstrap.connect(server.address.getAddress().getHostAddress(), server.address.getPort()).sync();
 
         if (!future.isSuccess()) {
             session.close();

@@ -3,16 +3,13 @@ package top.speedcubing.mcproxy;
 import io.netty.util.ResourceLeakDetector;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
+import java.net.InetSocketAddress;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import top.speedcubing.lib.utils.SystemUtils;
 import top.speedcubing.mcproxy.server.Node;
-import top.speedcubing.mcproxy.session.Session;
 
 public class Main {
 
@@ -40,7 +37,7 @@ public class Main {
                         System.gc();
                         break;
                     case "node":
-                        for(Node n : NodeList.nodes) {
+                        for (Node n : NodeList.nodes) {
                             Main.print(n);
                         }
                         break;
@@ -55,5 +52,10 @@ public class Main {
                 }
             }
         }).start();
+    }
+
+    public static InetSocketAddress parseAddress(String address) {
+        String[] s = address.split(":");
+        return new InetSocketAddress(s[0], s.length == 1 ? 25565 : Integer.parseInt(s[1]));
     }
 }

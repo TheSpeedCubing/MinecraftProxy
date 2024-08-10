@@ -3,6 +3,7 @@ package top.speedcubing.mcproxy.handler;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import java.util.concurrent.TimeUnit;
 import top.speedcubing.mcproxy.server.Node;
@@ -20,6 +21,9 @@ public class ClientInitializer extends ChannelInitializer<Channel> {
     public void initChannel(Channel channel) {
         this.session = new Session(node);
         channel.pipeline().addLast("read-timeout", new ReadTimeoutHandler(session.node.getSetting("readTimeout").getAsInteger(), TimeUnit.MILLISECONDS));
+        if (node.getSetting("proxy-protocol").getAsBoolean()) {
+            channel.pipeline().addLast("proxyprotocol-handler",new HAProxyMessageDecoder());
+        }
         channel.pipeline().addLast("client-handler", new ClientHandler(session));
     }
 

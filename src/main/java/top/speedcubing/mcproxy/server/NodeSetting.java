@@ -11,6 +11,7 @@ public class NodeSetting {
         settings.put("name", new Setting(o.get("name").getAsString(), false));
         settings.put("log", new Setting(o.get("log").getAsBoolean(), false));
         settings.put("blockedCIDR", new Setting(o.get("blockedCIDR").getAsJsonArray(), false));
+        settings.put("proxy-protocol", new Setting(o.get("proxy-protocol").getAsBoolean(), true));
         settings.put("tcpFastOpen", new Setting(o.get("tcpFastOpen").getAsBoolean(), true));
         settings.put("readTimeout", new Setting(o.get("readTimeout").getAsInt(), true));
         settings.put("servers", new Setting(o.get("servers").getAsJsonArray(), false));

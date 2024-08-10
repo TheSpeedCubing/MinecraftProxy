@@ -35,7 +35,7 @@ public class config {
             for (JsonElement j : object.get("nodes").getAsJsonArray()) {
                 JsonObject o = j.getAsJsonObject();
                 if (o.get("state").getAsBoolean()) {
-                    InetSocketAddress address = new InetSocketAddress(o.get("address").getAsString(), o.get("port").getAsInt());
+                    InetSocketAddress address = Main.parseAddress(o.get("address").getAsString());
 
                     NodeSetting nodeSetting = new NodeSetting(o);
 
