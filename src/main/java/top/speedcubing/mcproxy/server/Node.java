@@ -98,7 +98,6 @@ public class Node {
         } else {
             Main.print("Can't bind to " + address + "\n" + future.cause());
         }
-
     }
 
     public void shutdown() {

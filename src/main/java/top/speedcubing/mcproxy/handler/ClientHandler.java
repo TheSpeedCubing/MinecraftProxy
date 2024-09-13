@@ -1,6 +1,7 @@
 package top.speedcubing.mcproxy.handler;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -14,6 +15,10 @@ import java.net.InetSocketAddress;
 import java.util.Random;
 import top.speedcubing.lib.utils.internet.ip.CIDR;
 import top.speedcubing.mcproxy.Main;
+import top.speedcubing.mcproxy.config;
+import top.speedcubing.mcproxy.event.PacketEvent;
+import top.speedcubing.mcproxy.event.State;
+import top.speedcubing.mcproxy.packet.serverbound.ServerboundPacket;
 import top.speedcubing.mcproxy.server.BackendServer;
 import top.speedcubing.mcproxy.session.Session;
 
@@ -37,32 +42,58 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
+
         //CIDR blocking
-        if (!isConnectedToServer) {
+        if (session.handshakeProgress == State.HANDSHAKE) {
             InetSocketAddress playerAddress = (InetSocketAddress) ctx.channel().remoteAddress();
             for (CIDR cidr : session.node.blockedCIDR) {
                 if (cidr.contains(playerAddress.getAddress().getHostAddress())) {
-                    session.close();
-                    ReferenceCountUtil.release(msg);
+                    ctx.close();
                     return;
                 }
             }
         }
 
-        if (!isConnectedToServer) {
+        ByteBuf buf = (ByteBuf) msg;
+
+        if (buf.readableBytes() == 0) {
+            ReferenceCountUtil.release(msg);
+            return;
+        }
+
+        //simple
+        if (!config.readDetail) {
+            if (session.handshakeProgress == State.HANDSHAKE) {
+                try {
+                    connectToServer(ctx);
+                    session.handshakeProgress = State.PLAY;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    session.close();
+                    ReferenceCountUtil.release(msg);
+                    return;
+                }
+            }
+            session.serverChannel.writeAndFlush(buf);
+            return;
+        }
+
+        if (session.encryptMode) {
+            session.serverChannel.writeAndFlush(buf);
+            return;
+        }
+
+        if (session.handshakeProgress == State.HANDSHAKE) {
             try {
                 connectToServer(ctx);
-                isConnectedToServer = true;
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
-
-                session.close();
-                ReferenceCountUtil.release(msg);
-                return;
             }
         }
 
-        session.serverChannel.writeAndFlush(msg);
+        ServerboundPacket packet = ServerboundPacket.createServerBoundPacket(session, session.clientPacketLength, buf);
+        session.handshakeProgress = PacketEvent.handle(session, ctx, packet);
+        session.serverChannel.writeAndFlush(packet.encode());
     }
 
     void connectToServer(ChannelHandlerContext clientHandler) throws InterruptedException {

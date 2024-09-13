@@ -5,6 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.ReadTimeoutException;
 import java.net.SocketException;
 import top.speedcubing.mcproxy.Main;
+import top.speedcubing.mcproxy.event.State;
 import top.speedcubing.mcproxy.server.Node;
 
 public class Session {
@@ -15,6 +16,12 @@ public class Session {
     public volatile ChannelHandlerContext clientHandler;
     private volatile boolean closed = false;
 
+    //?
+    public State handshakeProgress = State.HANDSHAKE;
+    public boolean encryptMode;
+    //public SessionKey key = new SessionKey();
+    public int clientPacketLength;
+    public int serverPacketLength;
     public Session(Node node) {
         //System.out.println("Session " + this.hashCode() + " create");
         node.sessionCount++;
@@ -35,8 +42,6 @@ public class Session {
         if (closed) {
             return;
         }
-
-        //System.out.println("Session " + this.hashCode() + " close");
 
         if (serverChannel != null) {
             serverChannel.close();

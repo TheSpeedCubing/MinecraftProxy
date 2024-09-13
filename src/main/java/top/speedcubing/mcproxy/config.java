@@ -15,13 +15,15 @@ import top.speedcubing.mcproxy.server.Node;
 import top.speedcubing.mcproxy.server.NodeSetting;
 
 public class config {
+    public static boolean readDetail = true;
 
     public static void move() {
-        try {
-            if (!new File("config.json").exists()) {
-                InputStream file = Main.class.getClassLoader().getResourceAsStream("config.json");
-                Files.copy(file, Paths.get("config.json"), StandardCopyOption.REPLACE_EXISTING);
-            }
+        if (!new File("config.json").exists()) {
+            return;
+        }
+
+        try (InputStream file = Main.class.getClassLoader().getResourceAsStream("config.json")) {
+            Files.copy(file, Paths.get("config.json"), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException ex) {
             ex.printStackTrace();
         }

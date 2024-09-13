@@ -3,6 +3,8 @@ package top.speedcubing.mcproxy.handler;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import top.speedcubing.mcproxy.codec.MinecraftVarintFrameDecoder;
+import top.speedcubing.mcproxy.config;
 import top.speedcubing.mcproxy.session.Session;
 
 public class ServerInitializer extends ChannelInitializer<Channel> {
@@ -14,6 +16,10 @@ public class ServerInitializer extends ChannelInitializer<Channel> {
 
     @Override
     public void initChannel(Channel ch) {
+        if (config.readDetail) {
+            ch.pipeline().addLast("frame-decoder", new MinecraftVarintFrameDecoder(session, false));
+        }
+
         ch.pipeline().addLast("server-handler", new ServerHandler(session));
     }
 

@@ -6,6 +6,8 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import java.util.concurrent.TimeUnit;
+import top.speedcubing.mcproxy.codec.MinecraftVarintFrameDecoder;
+import top.speedcubing.mcproxy.config;
 import top.speedcubing.mcproxy.server.Node;
 import top.speedcubing.mcproxy.session.Session;
 
@@ -22,15 +24,20 @@ public class ClientInitializer extends ChannelInitializer<Channel> {
         this.session = new Session(node);
         channel.pipeline().addLast("read-timeout", new ReadTimeoutHandler(session.node.getSetting("readTimeout").getAsInteger(), TimeUnit.MILLISECONDS));
         if (node.getSetting("proxy-protocol").getAsBoolean()) {
-            channel.pipeline().addLast("proxyprotocol-handler",new HAProxyMessageDecoder());
+            channel.pipeline().addLast("proxyprotocol-handler", new HAProxyMessageDecoder());
+        }
+
+        if (config.readDetail) {
+            channel.pipeline().addLast("frame-decoder", new MinecraftVarintFrameDecoder(session, true));
         }
         channel.pipeline().addLast("client-handler", new ClientHandler(session));
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        if (session != null)
+        if (session != null) {
             session.close();
+        }
     }
 
     @Override
