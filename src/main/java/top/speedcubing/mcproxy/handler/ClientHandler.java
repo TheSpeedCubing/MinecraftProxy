@@ -25,7 +25,6 @@ import top.speedcubing.mcproxy.session.Session;
 public class ClientHandler extends ChannelInboundHandlerAdapter {
 
     private final BackendServer server;
-    private boolean isConnectedToServer = false;
     public final Session session;
 
     ClientHandler(Session session) {
@@ -106,6 +105,10 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, server.readTimeout)
                 .group(session.node.clientWorkerGroup)
                 .handler(new ServerInitializer(session));
+
+        if (session.node.getSetting("tcpFastOpen").getAsBoolean()) {
+            bootstrap.option(ChannelOption.TCP_FASTOPEN_CONNECT, true);
+        }
 
         ChannelFuture future = bootstrap.connect(server.address.getAddress().getHostAddress(), server.address.getPort()).sync();
 

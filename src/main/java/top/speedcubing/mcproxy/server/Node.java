@@ -77,18 +77,20 @@ public class Node {
         }
     }
 
+    public static WriteBufferWaterMark SERVER_WRITE_MARK = new WriteBufferWaterMark(1 << 20, 1 << 21);
+
     public void createBootstrap() throws InterruptedException {
         ServerBootstrap bootstrap = new ServerBootstrap()
                 .channelFactory(this.transportType.serverSocketChannelFactory)
                 .group(this.bossGroup, this.workerGroup)
-                .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1 << 20, 1 << 21))
+                .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, SERVER_WRITE_MARK)
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.IP_TOS, 0x18)
                 .childHandler(new ClientInitializer(this))
                 .localAddress(address);
 
         if (getSetting("tcpFastOpen").getAsBoolean())
-            bootstrap.option(ChannelOption.TCP_FASTOPEN, 3);
+            bootstrap.childOption(ChannelOption.TCP_FASTOPEN, 3);
 
         ChannelFuture future = bootstrap.bind().sync();
         channel = future.channel();
