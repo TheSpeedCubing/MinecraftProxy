@@ -1,11 +1,16 @@
-package top.speedcubing.mcproxy.packet.serverbound;
+package top.speedcubing.mcproxy.packet;
 
 
 import io.netty.buffer.ByteBuf;
 import top.speedcubing.lib.utils.bytes.ByteBufUtils;
 import top.speedcubing.mcproxy.event.State;
+import top.speedcubing.mcproxy.packet.serverbound.SHandshakePacket;
+import top.speedcubing.mcproxy.packet.serverbound.SLoginEncryptionResponsePacket;
+import top.speedcubing.mcproxy.packet.serverbound.SLoginStartPacket;
+import top.speedcubing.mcproxy.packet.serverbound.SStatusPingRequestPacket;
+import top.speedcubing.mcproxy.packet.serverbound.SStatusRequestPacket;
+import top.speedcubing.mcproxy.packet.serverbound.SUnknownPacket;
 import top.speedcubing.mcproxy.session.Session;
-import top.speedcubing.mcproxy.packet.Packet;
 
 public class ServerboundPacket extends Packet<ServerboundPacket> {
 

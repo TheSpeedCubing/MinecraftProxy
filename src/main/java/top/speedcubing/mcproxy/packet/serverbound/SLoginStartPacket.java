@@ -3,6 +3,7 @@ package top.speedcubing.mcproxy.packet.serverbound;
 import io.netty.buffer.ByteBuf;
 import top.speedcubing.lib.utils.bytes.ByteBufUtils;
 import top.speedcubing.mcproxy.packet.PacketUtils;
+import top.speedcubing.mcproxy.packet.ServerboundPacket;
 
 public class SLoginStartPacket extends ServerboundPacket {
 

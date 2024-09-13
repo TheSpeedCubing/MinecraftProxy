@@ -3,7 +3,7 @@ package top.speedcubing.mcproxy.event;
 import io.netty.channel.ChannelHandlerContext;
 import top.speedcubing.mcproxy.config;
 import top.speedcubing.mcproxy.packet.serverbound.SLoginEncryptionResponsePacket;
-import top.speedcubing.mcproxy.packet.serverbound.ServerboundPacket;
+import top.speedcubing.mcproxy.packet.ServerboundPacket;
 import top.speedcubing.mcproxy.session.Session;
 
 public class ServerBoundEvent {

@@ -18,7 +18,7 @@ import top.speedcubing.mcproxy.Main;
 import top.speedcubing.mcproxy.config;
 import top.speedcubing.mcproxy.event.PacketEvent;
 import top.speedcubing.mcproxy.event.State;
-import top.speedcubing.mcproxy.packet.serverbound.ServerboundPacket;
+import top.speedcubing.mcproxy.packet.ServerboundPacket;
 import top.speedcubing.mcproxy.server.BackendServer;
 import top.speedcubing.mcproxy.session.Session;
 

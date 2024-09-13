@@ -2,6 +2,7 @@ package top.speedcubing.mcproxy.packet.clientbound;
 
 import io.netty.buffer.ByteBuf;
 import top.speedcubing.lib.utils.bytes.ByteBufUtils;
+import top.speedcubing.mcproxy.packet.ClientboundPacket;
 import top.speedcubing.mcproxy.packet.PacketUtils;
 
 public class CLoginEncryptionRequestPacket extends ClientboundPacket {

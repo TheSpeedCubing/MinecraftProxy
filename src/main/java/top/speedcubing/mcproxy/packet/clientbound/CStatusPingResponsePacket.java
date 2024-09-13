@@ -1,9 +1,10 @@
 package top.speedcubing.mcproxy.packet.clientbound;
 
 import io.netty.buffer.ByteBuf;
+import top.speedcubing.mcproxy.packet.ClientboundPacket;
 import top.speedcubing.mcproxy.packet.PacketUtils;
 
-public class CStatusPingResponsePacket extends ClientboundPacket{
+public class CStatusPingResponsePacket extends ClientboundPacket {
 
     private long payload;
 

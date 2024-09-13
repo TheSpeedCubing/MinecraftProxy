@@ -1,8 +1,7 @@
 package top.speedcubing.mcproxy.packet.clientbound;
 
 import io.netty.buffer.ByteBuf;
-import java.util.Arrays;
-import top.speedcubing.mcproxy.Main;
+import top.speedcubing.mcproxy.packet.ClientboundPacket;
 import top.speedcubing.mcproxy.packet.PacketUtils;
 
 public class CUnknownPacket extends ClientboundPacket {

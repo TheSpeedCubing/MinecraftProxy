@@ -1,10 +1,10 @@
 package top.speedcubing.mcproxy.event;
 
 import io.netty.channel.ChannelHandlerContext;
-import top.speedcubing.mcproxy.packet.clientbound.ClientboundPacket;
+import top.speedcubing.mcproxy.packet.ClientboundPacket;
 import top.speedcubing.mcproxy.packet.serverbound.SHandshakePacket;
 import top.speedcubing.mcproxy.packet.serverbound.SLoginEncryptionResponsePacket;
-import top.speedcubing.mcproxy.packet.serverbound.ServerboundPacket;
+import top.speedcubing.mcproxy.packet.ServerboundPacket;
 import top.speedcubing.mcproxy.session.Session;
 
 public class PacketEvent {

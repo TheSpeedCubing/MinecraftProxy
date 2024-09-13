@@ -6,7 +6,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
 import top.speedcubing.mcproxy.config;
 import top.speedcubing.mcproxy.event.PacketEvent;
-import top.speedcubing.mcproxy.packet.clientbound.ClientboundPacket;
+import top.speedcubing.mcproxy.packet.ClientboundPacket;
 import top.speedcubing.mcproxy.session.Session;
 
 public class ServerHandler extends ChannelInboundHandlerAdapter {

@@ -13,12 +13,13 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import top.speedcubing.mcproxy.server.Node;
 import top.speedcubing.mcproxy.server.NodeSetting;
+import top.speedcubing.mcproxy.server.Setting;
 
 public class config {
-    public static boolean readDetail = true;
+    public static boolean readDetail;
 
     public static void move() {
-        if (!new File("config.json").exists()) {
+        if (new File("config.json").exists()) {
             return;
         }
 
@@ -32,6 +33,10 @@ public class config {
     public static void reload() {
         try {
             JsonObject object = JsonParser.parseReader(new FileReader("config.json")).getAsJsonObject();
+
+            //settings
+            JsonObject settings = object.getAsJsonObject("settings");
+            readDetail = settings.get("analyze-packets").getAsBoolean();
 
             //replace it as new nodes
             for (JsonElement j : object.get("nodes").getAsJsonArray()) {
