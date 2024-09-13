@@ -1,4 +1,7 @@
 {
+  "settings": {
+    "analyze-packets": false
+  },
   "nodes": [
     {
       "name": "example node",
